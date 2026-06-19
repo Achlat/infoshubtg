@@ -57,7 +57,7 @@ export function ArticleForm({ initial }: { initial?: any }) {
       cover_image: cover,
       category_id: categoryId || null,
       commune_id: communeId || null,
-      tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
+      tags: tags.split(",").map((t: string) => t.trim()).filter(Boolean),
       featured,
       status: finalStatus,
       published_at: finalStatus === "published" ? (initial?.published_at || new Date().toISOString()) : null,
