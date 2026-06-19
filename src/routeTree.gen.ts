@@ -9,38 +9,258 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CommunesRouteImport } from './routes/communes'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as ActualitesRouteImport } from './routes/actualites'
+import { Route as AProposRouteImport } from './routes/a-propos'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as CategorieSlugRouteImport } from './routes/categorie.$slug'
+import { Route as ArticleSlugRouteImport } from './routes/article.$slug'
+import { Route as AdminNewsletterRouteImport } from './routes/admin.newsletter'
+import { Route as AdminCommentsRouteImport } from './routes/admin.comments'
+import { Route as AdminArticlesRouteImport } from './routes/admin.articles'
+import { Route as AdminArticlesNewRouteImport } from './routes/admin.articles.new'
+import { Route as AdminArticlesIdEditRouteImport } from './routes/admin.articles.$id.edit'
 
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommunesRoute = CommunesRouteImport.update({
+  id: '/communes',
+  path: '/communes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActualitesRoute = ActualitesRouteImport.update({
+  id: '/actualites',
+  path: '/actualites',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AProposRoute = AProposRouteImport.update({
+  id: '/a-propos',
+  path: '/a-propos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const CategorieSlugRoute = CategorieSlugRouteImport.update({
+  id: '/categorie/$slug',
+  path: '/categorie/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ArticleSlugRoute = ArticleSlugRouteImport.update({
+  id: '/article/$slug',
+  path: '/article/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminNewsletterRoute = AdminNewsletterRouteImport.update({
+  id: '/newsletter',
+  path: '/newsletter',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCommentsRoute = AdminCommentsRouteImport.update({
+  id: '/comments',
+  path: '/comments',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminArticlesRoute = AdminArticlesRouteImport.update({
+  id: '/articles',
+  path: '/articles',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminArticlesNewRoute = AdminArticlesNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AdminArticlesRoute,
+} as any)
+const AdminArticlesIdEditRoute = AdminArticlesIdEditRouteImport.update({
+  id: '/$id/edit',
+  path: '/$id/edit',
+  getParentRoute: () => AdminArticlesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/a-propos': typeof AProposRoute
+  '/actualites': typeof ActualitesRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/communes': typeof CommunesRoute
+  '/contact': typeof ContactRoute
+  '/admin/articles': typeof AdminArticlesRouteWithChildren
+  '/admin/comments': typeof AdminCommentsRoute
+  '/admin/newsletter': typeof AdminNewsletterRoute
+  '/article/$slug': typeof ArticleSlugRoute
+  '/categorie/$slug': typeof CategorieSlugRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/articles/new': typeof AdminArticlesNewRoute
+  '/admin/articles/$id/edit': typeof AdminArticlesIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/a-propos': typeof AProposRoute
+  '/actualites': typeof ActualitesRoute
+  '/auth': typeof AuthRoute
+  '/communes': typeof CommunesRoute
+  '/contact': typeof ContactRoute
+  '/admin/articles': typeof AdminArticlesRouteWithChildren
+  '/admin/comments': typeof AdminCommentsRoute
+  '/admin/newsletter': typeof AdminNewsletterRoute
+  '/article/$slug': typeof ArticleSlugRoute
+  '/categorie/$slug': typeof CategorieSlugRoute
+  '/admin': typeof AdminIndexRoute
+  '/admin/articles/new': typeof AdminArticlesNewRoute
+  '/admin/articles/$id/edit': typeof AdminArticlesIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/a-propos': typeof AProposRoute
+  '/actualites': typeof ActualitesRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/communes': typeof CommunesRoute
+  '/contact': typeof ContactRoute
+  '/admin/articles': typeof AdminArticlesRouteWithChildren
+  '/admin/comments': typeof AdminCommentsRoute
+  '/admin/newsletter': typeof AdminNewsletterRoute
+  '/article/$slug': typeof ArticleSlugRoute
+  '/categorie/$slug': typeof CategorieSlugRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/articles/new': typeof AdminArticlesNewRoute
+  '/admin/articles/$id/edit': typeof AdminArticlesIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/a-propos'
+    | '/actualites'
+    | '/admin'
+    | '/auth'
+    | '/communes'
+    | '/contact'
+    | '/admin/articles'
+    | '/admin/comments'
+    | '/admin/newsletter'
+    | '/article/$slug'
+    | '/categorie/$slug'
+    | '/admin/'
+    | '/admin/articles/new'
+    | '/admin/articles/$id/edit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/a-propos'
+    | '/actualites'
+    | '/auth'
+    | '/communes'
+    | '/contact'
+    | '/admin/articles'
+    | '/admin/comments'
+    | '/admin/newsletter'
+    | '/article/$slug'
+    | '/categorie/$slug'
+    | '/admin'
+    | '/admin/articles/new'
+    | '/admin/articles/$id/edit'
+  id:
+    | '__root__'
+    | '/'
+    | '/a-propos'
+    | '/actualites'
+    | '/admin'
+    | '/auth'
+    | '/communes'
+    | '/contact'
+    | '/admin/articles'
+    | '/admin/comments'
+    | '/admin/newsletter'
+    | '/article/$slug'
+    | '/categorie/$slug'
+    | '/admin/'
+    | '/admin/articles/new'
+    | '/admin/articles/$id/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AProposRoute: typeof AProposRoute
+  ActualitesRoute: typeof ActualitesRoute
+  AdminRoute: typeof AdminRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  CommunesRoute: typeof CommunesRoute
+  ContactRoute: typeof ContactRoute
+  ArticleSlugRoute: typeof ArticleSlugRoute
+  CategorieSlugRoute: typeof CategorieSlugRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/communes': {
+      id: '/communes'
+      path: '/communes'
+      fullPath: '/communes'
+      preLoaderRoute: typeof CommunesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/actualites': {
+      id: '/actualites'
+      path: '/actualites'
+      fullPath: '/actualites'
+      preLoaderRoute: typeof ActualitesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/a-propos': {
+      id: '/a-propos'
+      path: '/a-propos'
+      fullPath: '/a-propos'
+      preLoaderRoute: typeof AProposRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +268,106 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/categorie/$slug': {
+      id: '/categorie/$slug'
+      path: '/categorie/$slug'
+      fullPath: '/categorie/$slug'
+      preLoaderRoute: typeof CategorieSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/article/$slug': {
+      id: '/article/$slug'
+      path: '/article/$slug'
+      fullPath: '/article/$slug'
+      preLoaderRoute: typeof ArticleSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/newsletter': {
+      id: '/admin/newsletter'
+      path: '/newsletter'
+      fullPath: '/admin/newsletter'
+      preLoaderRoute: typeof AdminNewsletterRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/comments': {
+      id: '/admin/comments'
+      path: '/comments'
+      fullPath: '/admin/comments'
+      preLoaderRoute: typeof AdminCommentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/articles': {
+      id: '/admin/articles'
+      path: '/articles'
+      fullPath: '/admin/articles'
+      preLoaderRoute: typeof AdminArticlesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/articles/new': {
+      id: '/admin/articles/new'
+      path: '/new'
+      fullPath: '/admin/articles/new'
+      preLoaderRoute: typeof AdminArticlesNewRouteImport
+      parentRoute: typeof AdminArticlesRoute
+    }
+    '/admin/articles/$id/edit': {
+      id: '/admin/articles/$id/edit'
+      path: '/$id/edit'
+      fullPath: '/admin/articles/$id/edit'
+      preLoaderRoute: typeof AdminArticlesIdEditRouteImport
+      parentRoute: typeof AdminArticlesRoute
+    }
   }
 }
 
+interface AdminArticlesRouteChildren {
+  AdminArticlesNewRoute: typeof AdminArticlesNewRoute
+  AdminArticlesIdEditRoute: typeof AdminArticlesIdEditRoute
+}
+
+const AdminArticlesRouteChildren: AdminArticlesRouteChildren = {
+  AdminArticlesNewRoute: AdminArticlesNewRoute,
+  AdminArticlesIdEditRoute: AdminArticlesIdEditRoute,
+}
+
+const AdminArticlesRouteWithChildren = AdminArticlesRoute._addFileChildren(
+  AdminArticlesRouteChildren,
+)
+
+interface AdminRouteChildren {
+  AdminArticlesRoute: typeof AdminArticlesRouteWithChildren
+  AdminCommentsRoute: typeof AdminCommentsRoute
+  AdminNewsletterRoute: typeof AdminNewsletterRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminArticlesRoute: AdminArticlesRouteWithChildren,
+  AdminCommentsRoute: AdminCommentsRoute,
+  AdminNewsletterRoute: AdminNewsletterRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AProposRoute: AProposRoute,
+  ActualitesRoute: ActualitesRoute,
+  AdminRoute: AdminRouteWithChildren,
+  AuthRoute: AuthRoute,
+  CommunesRoute: CommunesRoute,
+  ContactRoute: ContactRoute,
+  ArticleSlugRoute: ArticleSlugRoute,
+  CategorieSlugRoute: CategorieSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
