@@ -46,6 +46,12 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
+  --color-togo-red: var(--togo-red);
+  --color-togo-yellow: var(--togo-yellow);
+  --color-togo-green: var(--togo-green);
+  --color-primary-glow: var(--primary-glow);
+  --font-display: 'Merriweather', Georgia, serif;
+  --font-sans: 'Noto Sans', system-ui, sans-serif;
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
