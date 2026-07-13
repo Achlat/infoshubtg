@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/types";
 
@@ -12,22 +12,34 @@ function AdminArticlesList() {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["admin-articles"],
-    queryFn: async () => {
-      const { data } = await supabase.from("articles").select("*, category:categories(name,color)").order("created_at", { ascending: false });
-      return data ?? [];
-    },
+    queryFn: () => api.adminArticles.list(),
   });
 
   async function del(id: string) {
     if (!confirm("Supprimer cet article ?")) return;
-    const { error } = await supabase.from("articles").delete().eq("id", id);
-    if (error) toast.error(error.message); else { toast.success("Supprimé"); qc.invalidateQueries({ queryKey: ["admin-articles"] }); }
+    try {
+      await api.adminArticles.delete(id);
+      toast.success("Supprimé");
+      qc.invalidateQueries({ queryKey: ["admin-articles"] });
+    } catch (err: any) {
+      toast.error(err.message ?? "Erreur");
+    }
   }
 
   async function togglePublish(a: any) {
     const status = a.status === "published" ? "draft" : "published";
-    const { error } = await supabase.from("articles").update({ status, published_at: status === "published" ? new Date().toISOString() : null }).eq("id", a.id);
-    if (error) toast.error(error.message); else { toast.success(status === "published" ? "Publié" : "Dépublié"); qc.invalidateQueries({ queryKey: ["admin-articles"] }); }
+    try {
+      await api.adminArticles.update(a.id, {
+        slug: a.slug, title: a.title, excerpt: a.excerpt, content: a.content,
+        cover_image: a.cover_image, video_url: a.video_url, category_id: a.category_id, commune_id: a.commune_id,
+        tags: a.tags, featured: a.featured, status,
+        published_at: status === "published" ? new Date().toISOString() : null,
+      });
+      toast.success(status === "published" ? "Publié" : "Dépublié");
+      qc.invalidateQueries({ queryKey: ["admin-articles"] });
+    } catch (err: any) {
+      toast.error(err.message ?? "Erreur");
+    }
   }
 
   return (
@@ -47,7 +59,7 @@ function AdminArticlesList() {
               <tbody>
                 {data.map((a: any) => (
                   <tr key={a.id} className="border-t border-border">
-                    <td className="p-3 font-semibold">{a.title}</td>
+                    <td className="p-3 font-semibold">{a.title}{a.video_url && <span className="ml-2 rounded-sm bg-secondary px-1.5 py-0.5 text-[10px] font-bold uppercase text-secondary-foreground">Vidéo</span>}</td>
                     <td className="p-3">{a.category && <span className="rounded-sm px-2 py-0.5 text-[10px] font-bold uppercase text-white" style={{ backgroundColor: a.category.color }}>{a.category.name}</span>}</td>
                     <td className="p-3"><span className={`rounded-full px-2 py-0.5 text-xs font-bold ${a.status === "published" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>{a.status === "published" ? "Publié" : "Brouillon"}</span></td>
                     <td className="p-3 text-muted-foreground">{formatDate(a.published_at || a.created_at)}</td>

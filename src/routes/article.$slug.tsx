@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import type { Article } from "@/lib/types";
 import { formatDate } from "@/lib/types";
 import { ArticleCard } from "@/components/ArticleCard";
+import { getVideoEmbedUrl, isDirectVideoFile } from "@/lib/video";
 
 export const Route = createFileRoute("/article/$slug")({
   component: ArticlePage,
@@ -25,20 +26,12 @@ function ArticlePage() {
   const { data, isLoading } = useQuery({
     queryKey: ["article", slug],
     queryFn: async () => {
-      const { data: art } = await supabase
-        .from("articles")
-        .select("*, category:categories(*), commune:communes(*)")
-        .eq("slug", slug).eq("status", "published").maybeSingle();
+      const art = await api.articles.bySlug(slug);
       if (!art) return null;
-      const { data: related } = await supabase
-        .from("articles")
-        .select("*, category:categories(*), commune:communes(*)")
-        .eq("status", "published")
-        .eq("category_id", (art as any).category_id)
-        .neq("id", (art as any).id)
-        .order("published_at", { ascending: false })
-        .limit(3);
-      return { article: art as unknown as Article, related: (related ?? []) as unknown as Article[] };
+      const related = art.category_id
+        ? await api.articles.list({ category_id: art.category_id, exclude_id: art.id, limit: 3 })
+        : [];
+      return { article: art as Article, related: (related ?? []) as Article[] };
     },
   });
 
@@ -63,9 +56,26 @@ function ArticlePage() {
       </h1>
       {a.excerpt && <p className="mt-4 text-lg leading-relaxed text-muted-foreground">{a.excerpt}</p>}
 
-      {a.cover_image && (
+      {a.video_url ? (
+        (() => {
+          const embed = getVideoEmbedUrl(a.video_url);
+          return embed ? (
+            <iframe
+              src={embed}
+              title={a.title}
+              className="mt-6 aspect-[16/9] w-full rounded-xl"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          ) : isDirectVideoFile(a.video_url) ? (
+            <video src={a.video_url} controls poster={a.cover_image ?? undefined} className="mt-6 aspect-[16/9] w-full rounded-xl bg-black" />
+          ) : a.cover_image ? (
+            <img src={a.cover_image} alt={a.title} className="mt-6 aspect-[16/9] w-full rounded-xl object-cover" />
+          ) : null;
+        })()
+      ) : a.cover_image ? (
         <img src={a.cover_image} alt={a.title} className="mt-6 aspect-[16/9] w-full rounded-xl object-cover" />
-      )}
+      ) : null}
 
       <div className="prose prose-lg mt-8 max-w-none whitespace-pre-wrap text-foreground" style={{ lineHeight: 1.8 }}>
         {a.content}

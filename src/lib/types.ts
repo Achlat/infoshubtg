@@ -22,6 +22,7 @@ export type Article = {
   excerpt: string | null;
   content: string;
   cover_image: string | null;
+  video_url: string | null;
   category_id: string | null;
   commune_id: string | null;
   author_id: string | null;

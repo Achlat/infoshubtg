@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { ArticleCard } from "@/components/ArticleCard";
 import type { Article, Category } from "@/lib/types";
 
@@ -13,13 +13,10 @@ function CategoryPage() {
   const { data } = useQuery({
     queryKey: ["cat", slug],
     queryFn: async () => {
-      const { data: cat } = await supabase.from("categories").select("*").eq("slug", slug).maybeSingle();
+      const cat = await api.categories.bySlug(slug);
       if (!cat) return null;
-      const { data: list } = await supabase
-        .from("articles").select("*, category:categories(*), commune:communes(*)")
-        .eq("status", "published").eq("category_id", (cat as any).id)
-        .order("published_at", { ascending: false }).limit(50);
-      return { cat: cat as Category, articles: (list ?? []) as unknown as Article[] };
+      const list = await api.articles.list({ category_id: cat.id, limit: 50 });
+      return { cat: cat as Category, articles: (list ?? []) as Article[] };
     },
   });
 

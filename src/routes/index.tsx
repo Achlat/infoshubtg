@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import type { Article, Category } from "@/lib/types";
 import { ArticleCard } from "@/components/ArticleCard";
 import { NewsletterForm } from "@/components/NewsletterForm";
@@ -19,15 +19,15 @@ export const Route = createFileRoute("/")({
 });
 
 async function fetchHome() {
-  const [{ data: featured }, { data: latest }, { data: cats }] = await Promise.all([
-    supabase.from("articles").select("*, category:categories(*), commune:communes(*)").eq("status", "published").eq("featured", true).order("published_at", { ascending: false }).limit(5),
-    supabase.from("articles").select("*, category:categories(*), commune:communes(*)").eq("status", "published").order("published_at", { ascending: false }).limit(9),
-    supabase.from("categories").select("*"),
+  const [featured, latest, categories] = await Promise.all([
+    api.articles.list({ featured: true, limit: 5 }),
+    api.articles.list({ limit: 9 }),
+    api.categories.list(),
   ]);
   return {
-    featured: (featured ?? []) as unknown as Article[],
-    latest: (latest ?? []) as unknown as Article[],
-    categories: (cats ?? []) as Category[],
+    featured: (featured ?? []) as Article[],
+    latest:   (latest   ?? []) as Article[],
+    categories: (categories ?? []) as Category[],
   };
 }
 
@@ -142,8 +142,8 @@ function EmptyHero() {
   return (
     <div className="rounded-2xl border border-dashed border-border p-12 text-center" style={{ background: "var(--gradient-hero)" }}>
       <h2 className="text-3xl font-black text-primary-foreground" style={{ fontFamily: "var(--font-display)" }}>Bienvenue sur Communes-Infos.TG</h2>
-      <p className="mt-3 text-primary-foreground/80">Le site est prêt. Connectez-vous à l'espace admin pour publier votre premier article.</p>
-      <Link to="/auth" className="mt-6 inline-block rounded-md bg-background px-5 py-2.5 text-sm font-bold text-primary">Accéder à l'admin</Link>
+      <p className="mt-3 text-primary-foreground/80">Le portail de référence pour l'actualité des communes du Togo. Revenez prochainement pour découvrir nos articles.</p>
+      <Link to="/actualites" className="mt-6 inline-block rounded-md bg-background px-5 py-2.5 text-sm font-bold text-primary">Explorer les actualités</Link>
     </div>
   );
 }
@@ -151,7 +151,7 @@ function EmptyHero() {
 function EmptyState() {
   return (
     <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
-      Aucun article publié pour le moment. Publiez le premier depuis l'espace admin.
+      Aucun article disponible pour le moment. Revenez prochainement.
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { toast } from "sonner";
 
 export function NewsletterForm({ compact = false }: { compact?: boolean }) {
@@ -10,10 +10,10 @@ export function NewsletterForm({ compact = false }: { compact?: boolean }) {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.from("newsletter_subscribers").insert({ email, first_name: name || null });
+    const res = await api.newsletter.subscribe(email, name || undefined);
     setLoading(false);
-    if (error) {
-      toast.error(error.code === "23505" ? "Cet email est déjà inscrit." : "Erreur lors de l'inscription.");
+    if (res.error) {
+      toast.error(res.error === "already_subscribed" ? "Cet email est déjà inscrit." : "Erreur lors de l'inscription.");
     } else {
       toast.success("Merci ! Vous êtes bien inscrit(e).");
       setEmail(""); setName("");

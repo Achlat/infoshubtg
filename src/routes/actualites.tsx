@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { ArticleCard } from "@/components/ArticleCard";
 import type { Article, Category, Commune } from "@/lib/types";
 
@@ -25,28 +25,21 @@ function ActualitesPage() {
   const filters = useQuery({
     queryKey: ["filters"],
     queryFn: async () => {
-      const [c, m] = await Promise.all([
-        supabase.from("categories").select("*").order("name"),
-        supabase.from("communes").select("*").order("name"),
-      ]);
-      return { cats: (c.data ?? []) as Category[], coms: (m.data ?? []) as Commune[] };
+      const [cats, coms] = await Promise.all([api.categories.list(), api.communes.list()]);
+      return { cats: (cats ?? []) as Category[], coms: (coms ?? []) as Commune[] };
     },
   });
 
   const list = useQuery({
     queryKey: ["articles-list", q, cat, com],
     queryFn: async () => {
-      let query = supabase
-        .from("articles")
-        .select("*, category:categories(*), commune:communes(*)")
-        .eq("status", "published")
-        .order("published_at", { ascending: false })
-        .limit(50);
-      if (cat) query = query.eq("category_id", cat);
-      if (com) query = query.eq("commune_id", com);
-      if (q) query = query.ilike("title", `%${q}%`);
-      const { data } = await query;
-      return (data ?? []) as unknown as Article[];
+      const data = await api.articles.list({
+        limit: 50,
+        ...(cat ? { category_id: cat } : {}),
+        ...(com ? { commune_id:  com } : {}),
+        ...(q   ? { search:      q   } : {}),
+      });
+      return (data ?? []) as Article[];
     },
   });
 

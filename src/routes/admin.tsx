@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/lib/use-auth";
-import { supabase } from "@/integrations/supabase/client";
+import { api, setToken } from "@/lib/api";
 import { toast } from "sonner";
 import { LayoutDashboard, FileText, Plus, MessageSquare, Mail, LogOut } from "lucide-react";
 
@@ -20,14 +20,15 @@ function AdminLayout() {
   useEffect(() => {
     // Auto-claim admin if no admin exists yet
     if (session && !isAdmin && !loading) {
-      supabase.rpc("claim_first_admin").then(({ data }) => {
-        if (data === true) { toast.success("Vous êtes le premier administrateur !"); reloadRoles(); }
+      api.auth.claimFirstAdmin().then(({ claimed }) => {
+        if (claimed) { toast.success("Vous êtes le premier administrateur !"); reloadRoles(); }
       });
     }
   }, [session, isAdmin, loading, reloadRoles]);
 
   async function logout() {
-    await supabase.auth.signOut();
+    await api.auth.logout().catch(() => {});
+    setToken(null);
     nav({ to: "/" });
   }
 

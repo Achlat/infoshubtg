@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { ArticleForm } from "@/components/ArticleForm";
 
 export const Route = createFileRoute("/admin/articles/$id/edit")({
@@ -11,10 +11,7 @@ function EditPage() {
   const { id } = Route.useParams();
   const { data, isLoading } = useQuery({
     queryKey: ["edit-article", id],
-    queryFn: async () => {
-      const { data } = await supabase.from("articles").select("*").eq("id", id).maybeSingle();
-      return data;
-    },
+    queryFn: () => api.adminArticles.get(id),
   });
 
   return (

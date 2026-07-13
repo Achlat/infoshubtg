@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { Play } from "lucide-react";
 import type { Article } from "@/lib/types";
 import { formatDate } from "@/lib/types";
 
@@ -10,11 +11,18 @@ export function ArticleCard({ article, size = "md" }: { article: Article; size?:
       className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:-translate-y-0.5"
       style={{ boxShadow: "var(--shadow-card)" }}
     >
-      <div className={size === "lg" ? "aspect-[16/9]" : "aspect-[16/10]"}>
+      <div className={`relative ${size === "lg" ? "aspect-[16/9]" : "aspect-[16/10]"}`}>
         {article.cover_image ? (
           <img src={article.cover_image} alt={article.title} loading="lazy" className="h-full w-full object-cover transition-transform group-hover:scale-[1.03]" />
         ) : (
           <div className="h-full w-full" style={{ background: "var(--gradient-hero)" }} />
+        )}
+        {article.video_url && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-background/90 shadow-md">
+              <Play className="h-4 w-4 translate-x-[1px]" fill="currentColor" />
+            </span>
+          </div>
         )}
       </div>
       <div className="flex flex-1 flex-col gap-2 p-4">

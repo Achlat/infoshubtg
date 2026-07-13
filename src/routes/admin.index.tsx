@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/admin/")({
   component: Dashboard,
@@ -9,15 +9,7 @@ export const Route = createFileRoute("/admin/")({
 function Dashboard() {
   const { data } = useQuery({
     queryKey: ["dashboard-stats"],
-    queryFn: async () => {
-      const [a, p, c, n] = await Promise.all([
-        supabase.from("articles").select("id", { count: "exact", head: true }),
-        supabase.from("articles").select("id", { count: "exact", head: true }).eq("status", "published"),
-        supabase.from("comments").select("id", { count: "exact", head: true }).eq("approved", false),
-        supabase.from("newsletter_subscribers").select("id", { count: "exact", head: true }),
-      ]);
-      return { total: a.count ?? 0, published: p.count ?? 0, pendingComments: c.count ?? 0, subs: n.count ?? 0 };
-    },
+    queryFn: () => api.adminStats.get(),
   });
 
   const cards = [

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { api, getToken, setToken } from "@/lib/api";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 
@@ -18,7 +18,7 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => { if (data.session) nav({ to: "/admin" }); });
+    if (getToken()) nav({ to: "/admin" });
   }, [nav]);
 
   async function submit(e: React.FormEvent) {
@@ -26,16 +26,13 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email, password,
-          options: { data: { display_name: name }, emailRedirectTo: `${window.location.origin}/admin` },
-        });
-        if (error) throw error;
+        const { token } = await api.auth.register(email, password, name);
+        setToken(token);
         toast.success("Compte créé. Vous êtes connecté(e).");
         nav({ to: "/admin" });
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        const { token } = await api.auth.login(email, password);
+        setToken(token);
         nav({ to: "/admin" });
       }
     } catch (err: any) {
@@ -52,12 +49,12 @@ function AuthPage() {
         {mode === "signin" ? "Connexion" : "Créer un compte"}
       </h1>
       <p className="mt-1 text-sm text-muted-foreground">Espace réservé à la rédaction</p>
-      <form onSubmit={submit} className="mt-6 w-full space-y-3 rounded-xl border border-border bg-card p-5">
+      <form onSubmit={submit} autoComplete="off" className="mt-6 w-full space-y-3 rounded-xl border border-border bg-card p-5">
         {mode === "signup" && (
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nom d'affichage" required className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nom d'affichage" required autoComplete="off" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
         )}
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" required className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mot de passe (min. 6 caractères)" required minLength={6} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" required autoComplete="off" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mot de passe (min. 6 caractères)" required minLength={6} autoComplete="new-password" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
         <button type="submit" disabled={loading} className="w-full rounded-md py-2 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50" style={{ background: "var(--gradient-hero)" }}>
           {loading ? "..." : mode === "signin" ? "Se connecter" : "Créer mon compte"}
         </button>

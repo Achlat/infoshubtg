@@ -1,32 +1,39 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState, useCallback } from "react";
+import { api, getToken, setToken } from "@/lib/api";
 
 export function useAuth() {
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<{ user: { id: string; email: string } } | null>(null);
   const [roles, setRoles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let mounted = true;
-    const init = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!mounted) return;
-      setSession(data.session);
-      if (data.session) await loadRoles(data.session.user.id);
+  const load = useCallback(async () => {
+    const token = getToken();
+    if (!token) { setSession(null); setRoles([]); setLoading(false); return; }
+    try {
+      const { user, roles } = await api.auth.me();
+      setSession({ user });
+      setRoles(roles);
+    } catch {
+      setToken(null);
+      setSession(null);
+      setRoles([]);
+    } finally {
       setLoading(false);
-    };
-    init();
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_e, s) => {
-      setSession(s);
-      if (s) await loadRoles(s.user.id); else setRoles([]);
-    });
-    return () => { mounted = false; sub.subscription.unsubscribe(); };
+    }
   }, []);
 
-  async function loadRoles(uid: string) {
-    const { data } = await supabase.from("user_roles").select("role").eq("user_id", uid);
-    setRoles((data ?? []).map((r: any) => r.role));
-  }
+  useEffect(() => {
+    load();
+    window.addEventListener("auth-changed", load);
+    return () => window.removeEventListener("auth-changed", load);
+  }, [load]);
 
-  return { session, roles, loading, isAdmin: roles.includes("admin"), isEditor: roles.includes("admin") || roles.includes("editor"), reloadRoles: () => session && loadRoles(session.user.id) };
+  return {
+    session,
+    roles,
+    loading,
+    isAdmin: roles.includes("admin"),
+    isEditor: roles.includes("admin") || roles.includes("editor"),
+    reloadRoles: load,
+  };
 }

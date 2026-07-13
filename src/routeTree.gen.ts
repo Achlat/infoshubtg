@@ -17,6 +17,7 @@ import { Route as ActualitesRouteImport } from './routes/actualites'
 import { Route as AProposRouteImport } from './routes/a-propos'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as CommunesSlugRouteImport } from './routes/communes.$slug'
 import { Route as CategorieSlugRouteImport } from './routes/categorie.$slug'
 import { Route as ArticleSlugRouteImport } from './routes/article.$slug'
 import { Route as AdminNewsletterRouteImport } from './routes/admin.newsletter'
@@ -65,6 +66,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const CommunesSlugRoute = CommunesSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => CommunesRoute,
+} as any)
 const CategorieSlugRoute = CategorieSlugRouteImport.update({
   id: '/categorie/$slug',
   path: '/categorie/$slug',
@@ -107,13 +113,14 @@ export interface FileRoutesByFullPath {
   '/actualites': typeof ActualitesRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
-  '/communes': typeof CommunesRoute
+  '/communes': typeof CommunesRouteWithChildren
   '/contact': typeof ContactRoute
   '/admin/articles': typeof AdminArticlesRouteWithChildren
   '/admin/comments': typeof AdminCommentsRoute
   '/admin/newsletter': typeof AdminNewsletterRoute
   '/article/$slug': typeof ArticleSlugRoute
   '/categorie/$slug': typeof CategorieSlugRoute
+  '/communes/$slug': typeof CommunesSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/articles/new': typeof AdminArticlesNewRoute
   '/admin/articles/$id/edit': typeof AdminArticlesIdEditRoute
@@ -123,13 +130,14 @@ export interface FileRoutesByTo {
   '/a-propos': typeof AProposRoute
   '/actualites': typeof ActualitesRoute
   '/auth': typeof AuthRoute
-  '/communes': typeof CommunesRoute
+  '/communes': typeof CommunesRouteWithChildren
   '/contact': typeof ContactRoute
   '/admin/articles': typeof AdminArticlesRouteWithChildren
   '/admin/comments': typeof AdminCommentsRoute
   '/admin/newsletter': typeof AdminNewsletterRoute
   '/article/$slug': typeof ArticleSlugRoute
   '/categorie/$slug': typeof CategorieSlugRoute
+  '/communes/$slug': typeof CommunesSlugRoute
   '/admin': typeof AdminIndexRoute
   '/admin/articles/new': typeof AdminArticlesNewRoute
   '/admin/articles/$id/edit': typeof AdminArticlesIdEditRoute
@@ -141,13 +149,14 @@ export interface FileRoutesById {
   '/actualites': typeof ActualitesRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
-  '/communes': typeof CommunesRoute
+  '/communes': typeof CommunesRouteWithChildren
   '/contact': typeof ContactRoute
   '/admin/articles': typeof AdminArticlesRouteWithChildren
   '/admin/comments': typeof AdminCommentsRoute
   '/admin/newsletter': typeof AdminNewsletterRoute
   '/article/$slug': typeof ArticleSlugRoute
   '/categorie/$slug': typeof CategorieSlugRoute
+  '/communes/$slug': typeof CommunesSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/articles/new': typeof AdminArticlesNewRoute
   '/admin/articles/$id/edit': typeof AdminArticlesIdEditRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
     | '/admin/newsletter'
     | '/article/$slug'
     | '/categorie/$slug'
+    | '/communes/$slug'
     | '/admin/'
     | '/admin/articles/new'
     | '/admin/articles/$id/edit'
@@ -183,6 +193,7 @@ export interface FileRouteTypes {
     | '/admin/newsletter'
     | '/article/$slug'
     | '/categorie/$slug'
+    | '/communes/$slug'
     | '/admin'
     | '/admin/articles/new'
     | '/admin/articles/$id/edit'
@@ -200,6 +211,7 @@ export interface FileRouteTypes {
     | '/admin/newsletter'
     | '/article/$slug'
     | '/categorie/$slug'
+    | '/communes/$slug'
     | '/admin/'
     | '/admin/articles/new'
     | '/admin/articles/$id/edit'
@@ -211,7 +223,7 @@ export interface RootRouteChildren {
   ActualitesRoute: typeof ActualitesRoute
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
-  CommunesRoute: typeof CommunesRoute
+  CommunesRoute: typeof CommunesRouteWithChildren
   ContactRoute: typeof ContactRoute
   ArticleSlugRoute: typeof ArticleSlugRoute
   CategorieSlugRoute: typeof CategorieSlugRoute
@@ -274,6 +286,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/communes/$slug': {
+      id: '/communes/$slug'
+      path: '/$slug'
+      fullPath: '/communes/$slug'
+      preLoaderRoute: typeof CommunesSlugRouteImport
+      parentRoute: typeof CommunesRoute
     }
     '/categorie/$slug': {
       id: '/categorie/$slug'
@@ -357,13 +376,25 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface CommunesRouteChildren {
+  CommunesSlugRoute: typeof CommunesSlugRoute
+}
+
+const CommunesRouteChildren: CommunesRouteChildren = {
+  CommunesSlugRoute: CommunesSlugRoute,
+}
+
+const CommunesRouteWithChildren = CommunesRoute._addFileChildren(
+  CommunesRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AProposRoute: AProposRoute,
   ActualitesRoute: ActualitesRoute,
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
-  CommunesRoute: CommunesRoute,
+  CommunesRoute: CommunesRouteWithChildren,
   ContactRoute: ContactRoute,
   ArticleSlugRoute: ArticleSlugRoute,
   CategorieSlugRoute: CategorieSlugRoute,
@@ -371,3 +402,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

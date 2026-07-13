@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/comments")({
@@ -11,20 +11,27 @@ function CommentsModeration() {
   const qc = useQueryClient();
   const { data } = useQuery({
     queryKey: ["admin-comments"],
-    queryFn: async () => {
-      const { data } = await supabase.from("comments").select("*, article:articles(title,slug)").order("created_at", { ascending: false });
-      return data ?? [];
-    },
+    queryFn: () => api.adminComments.list(),
   });
 
   async function approve(id: string) {
-    const { error } = await supabase.from("comments").update({ approved: true }).eq("id", id);
-    if (error) toast.error(error.message); else { toast.success("Approuvé"); qc.invalidateQueries({ queryKey: ["admin-comments"] }); }
+    try {
+      await api.adminComments.approve(id);
+      toast.success("Approuvé");
+      qc.invalidateQueries({ queryKey: ["admin-comments"] });
+    } catch (err: any) {
+      toast.error(err.message ?? "Erreur");
+    }
   }
   async function del(id: string) {
     if (!confirm("Supprimer ?")) return;
-    const { error } = await supabase.from("comments").delete().eq("id", id);
-    if (error) toast.error(error.message); else { toast.success("Supprimé"); qc.invalidateQueries({ queryKey: ["admin-comments"] }); }
+    try {
+      await api.adminComments.delete(id);
+      toast.success("Supprimé");
+      qc.invalidateQueries({ queryKey: ["admin-comments"] });
+    } catch (err: any) {
+      toast.error(err.message ?? "Erreur");
+    }
   }
 
   return (

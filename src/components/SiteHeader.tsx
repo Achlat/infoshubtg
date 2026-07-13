@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Search, Menu, X, Facebook, Twitter } from "lucide-react";
 import { useEffect, useState } from "react";
 import logo from "@/assets/logo.jpeg";
-import { supabase } from "@/integrations/supabase/client";
+import { getToken } from "@/lib/api";
 
 const NAV = [
   { to: "/", label: "Accueil" },
@@ -17,9 +17,10 @@ export function SiteHeader() {
   const [isAuthed, setIsAuthed] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setIsAuthed(!!data.session));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setIsAuthed(!!s));
-    return () => sub.subscription.unsubscribe();
+    const check = () => setIsAuthed(!!getToken());
+    check();
+    window.addEventListener("auth-changed", check);
+    return () => window.removeEventListener("auth-changed", check);
   }, []);
 
   return (

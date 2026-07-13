@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/admin/newsletter")({
   component: NewsletterAdmin,
@@ -9,10 +9,7 @@ export const Route = createFileRoute("/admin/newsletter")({
 function NewsletterAdmin() {
   const { data } = useQuery({
     queryKey: ["admin-newsletter"],
-    queryFn: async () => {
-      const { data } = await supabase.from("newsletter_subscribers").select("*").order("created_at", { ascending: false });
-      return data ?? [];
-    },
+    queryFn: () => api.adminNewsletter.list(),
   });
 
   function exportCsv() {
