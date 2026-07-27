@@ -14,6 +14,10 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Toaster } from "@/components/ui/sonner";
+import logoBanner from "@/assets/logo-banner.jpeg";
+import { SITE_URL, SITE_NAME, DEFAULT_DESCRIPTION } from "@/lib/site";
+
+const DEFAULT_OG_IMAGE = `${SITE_URL}${logoBanner}`;
 
 function NotFoundComponent() {
   return (
@@ -83,11 +87,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Communes-Infos.TG — L'actualité des communes du Togo" },
       { name: "description", content: "Le portail de référence pour l'actualité politique, culturelle, économique, sociale, sanitaire et environnementale des communes togolaises." },
       { name: "author", content: "Communes-Infos.TG" },
+      { property: "og:site_name", content: SITE_NAME },
       { property: "og:title", content: "Communes-Infos.TG" },
-      { property: "og:description", content: "L'actualité des communes du Togo, avec rigueur journalistique." },
+      { property: "og:description", content: DEFAULT_DESCRIPTION },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { property: "og:image", content: DEFAULT_OG_IMAGE },
+      { property: "og:image:alt", content: SITE_NAME },
+      { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@CommunesInfosTG" },
+      { name: "twitter:image", content: DEFAULT_OG_IMAGE },
     ],
     links: [
       {

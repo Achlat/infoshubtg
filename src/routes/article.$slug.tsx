@@ -1,12 +1,48 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { api } from "@/lib/api";
 import type { Article } from "@/lib/types";
 import { formatDate } from "@/lib/types";
 import { ArticleCard } from "@/components/ArticleCard";
 import { getVideoEmbedUrl, isDirectVideoFile } from "@/lib/video";
+import { SITE_URL, DEFAULT_DESCRIPTION } from "@/lib/site";
+
+async function fetchArticle(slug: string) {
+  const art = await api.articles.bySlug(slug).catch(() => null);
+  if (!art) throw notFound();
+  const related = art.category_id
+    ? await api.articles.list({ category_id: art.category_id, exclude_id: art.id, limit: 3 })
+    : [];
+  return { article: art as Article, related: (related ?? []) as Article[] };
+}
 
 export const Route = createFileRoute("/article/$slug")({
+  loader: ({ params }) => fetchArticle(params.slug),
+  head: ({ loaderData }) => {
+    if (!loaderData) return {};
+    const { article: a } = loaderData;
+    const description = a.excerpt || DEFAULT_DESCRIPTION;
+    const url = `${SITE_URL}/article/${a.slug}`;
+    return {
+      meta: [
+        { title: `${a.title} — Communes-Infos.TG` },
+        { name: "description", content: description },
+        { property: "og:title", content: a.title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "article" },
+        { property: "og:url", content: url },
+        ...(a.cover_image
+          ? [
+              { property: "og:image", content: a.cover_image },
+              { property: "og:image:alt", content: a.title },
+              { name: "twitter:image", content: a.cover_image },
+            ]
+          : []),
+        { name: "twitter:card", content: a.cover_image ? "summary_large_image" : "summary" },
+        { name: "twitter:title", content: a.title },
+        { name: "twitter:description", content: description },
+      ],
+    };
+  },
   component: ArticlePage,
   notFoundComponent: () => <NotFound />,
   errorComponent: () => <NotFound />,
@@ -22,23 +58,9 @@ function NotFound() {
 }
 
 function ArticlePage() {
-  const { slug } = Route.useParams();
-  const { data, isLoading } = useQuery({
-    queryKey: ["article", slug],
-    queryFn: async () => {
-      const art = await api.articles.bySlug(slug);
-      if (!art) return null;
-      const related = art.category_id
-        ? await api.articles.list({ category_id: art.category_id, exclude_id: art.id, limit: 3 })
-        : [];
-      return { article: art as Article, related: (related ?? []) as Article[] };
-    },
-  });
-
-  if (isLoading) return <div className="mx-auto max-w-3xl px-4 py-12"><div className="h-96 animate-pulse rounded-xl bg-muted" /></div>;
-  if (!data) return <NotFound />;
+  const data = Route.useLoaderData();
   const a = data.article;
-  const url = typeof window !== "undefined" ? window.location.href : "";
+  const url = typeof window !== "undefined" ? window.location.href : `${SITE_URL}/article/${a.slug}`;
 
   return (
     <article className="mx-auto max-w-4xl px-4 py-10 lg:px-6">
