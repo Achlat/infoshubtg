@@ -31,3 +31,7 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# Environment variables (contains Supabase secret key)
+.env
+.env.*

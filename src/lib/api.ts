@@ -1,113 +1,182 @@
-const BASE = 'http://localhost/togo-api/api.php';
-const TOKEN_KEY = 'ci_token';
+import { supabase } from "@/integrations/supabase/client";
+import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
-export function getToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(TOKEN_KEY);
-}
+const ARTICLE_SELECT = "*, category:categories(*), commune:communes(*)";
 
-export function setToken(token: string | null) {
-  if (typeof window === 'undefined') return;
-  if (token) localStorage.setItem(TOKEN_KEY, token); else localStorage.removeItem(TOKEN_KEY);
-  window.dispatchEvent(new Event('auth-changed'));
-}
-
-function authHeaders(): Record<string, string> {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-async function get<T>(endpoint: string, params: Record<string, string | number> = {}, auth = false): Promise<T> {
-  const url = new URL(BASE);
-  url.searchParams.set('endpoint', endpoint);
-  for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined && v !== '') url.searchParams.set(k, String(v));
-  }
-  const res = await fetch(url.toString(), { headers: auth ? authHeaders() : undefined });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data?.error || 'Erreur serveur');
-  return data;
-}
-
-async function post<T>(endpoint: string, body: unknown, auth = false): Promise<T> {
-  const url = new URL(BASE);
-  url.searchParams.set('endpoint', endpoint);
-  const res = await fetch(url.toString(), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...(auth ? authHeaders() : {}) },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data?.error || 'Erreur serveur');
-  return data;
+function escapeIlike(term: string) {
+  return term.replace(/[%,_()]/g, " ").trim();
 }
 
 export const api = {
   articles: {
-    list: (p?: { featured?: boolean; category_id?: string; commune_id?: string; search?: string; limit?: number; exclude_id?: string }) =>
-      get<any[]>('articles', {
-        ...(p?.featured    ? { featured:     1             } : {}),
-        ...(p?.category_id ? { category_id:  p.category_id } : {}),
-        ...(p?.commune_id  ? { commune_id:   p.commune_id  } : {}),
-        ...(p?.search      ? { search:       p.search      } : {}),
-        ...(p?.limit       ? { limit:        p.limit       } : {}),
-        ...(p?.exclude_id  ? { exclude_id:   p.exclude_id  } : {}),
-      }),
-    bySlug: (slug: string) => get<any>('articles', { slug }),
+    list: async (p?: {
+      featured?: boolean;
+      category_id?: string;
+      commune_id?: string;
+      search?: string;
+      limit?: number;
+      exclude_id?: string;
+    }) => {
+      let q = supabase
+        .from("articles")
+        .select(ARTICLE_SELECT)
+        .eq("status", "published")
+        .order("published_at", { ascending: false });
+      if (p?.featured) q = q.eq("featured", true);
+      if (p?.category_id) q = q.eq("category_id", p.category_id);
+      if (p?.commune_id) q = q.eq("commune_id", p.commune_id);
+      if (p?.exclude_id) q = q.neq("id", p.exclude_id);
+      if (p?.search) {
+        const term = escapeIlike(p.search);
+        if (term) q = q.or(`title.ilike.%${term}%,excerpt.ilike.%${term}%`);
+      }
+      if (p?.limit !== undefined) q = q.limit(p.limit);
+      const { data, error } = await q;
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    bySlug: async (slug: string) => {
+      const { data, error } = await supabase.from("articles").select(ARTICLE_SELECT).eq("slug", slug).maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!data) throw new Error("Article introuvable");
+      return data;
+    },
   },
   categories: {
-    list: () => get<any[]>('categories'),
-    bySlug: (slug: string) => get<any>('categories', { slug }),
+    list: async () => {
+      const { data, error } = await supabase.from("categories").select("*").order("name");
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    bySlug: async (slug: string) => {
+      const { data, error } = await supabase.from("categories").select("*").eq("slug", slug).maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!data) throw new Error("Catégorie introuvable");
+      return data;
+    },
   },
   communes: {
-    list: () => get<any[]>('communes'),
-    bySlug: (slug: string) => get<any>('communes', { slug }),
+    list: async () => {
+      const { data, error } = await supabase.from("communes").select("*").order("name");
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    bySlug: async (slug: string) => {
+      const { data, error } = await supabase.from("communes").select("*").eq("slug", slug).maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!data) throw new Error("Commune introuvable");
+      return data;
+    },
   },
   newsletter: {
-    subscribe: (email: string, first_name?: string) =>
-      post<{ success?: boolean; error?: string }>('newsletter', { email, first_name }),
+    subscribe: async (email: string, first_name?: string) => {
+      const { error } = await supabase.from("newsletter_subscribers").insert({ email, first_name });
+      if (error) {
+        if (error.code === "23505") return { error: "already_subscribed" };
+        return { error: error.message };
+      }
+      return { success: true };
+    },
   },
 
-  auth: {
-    me: () => get<{ user: { id: string; email: string }; roles: string[] }>('auth', { action: 'me' }, true),
-    register: (email: string, password: string, display_name?: string) =>
-      post<{ token: string; user: { id: string; email: string }; roles: string[] }>('auth', { action: 'register', email, password, display_name }),
-    login: (email: string, password: string) =>
-      post<{ token: string; user: { id: string; email: string }; roles: string[] }>('auth', { action: 'login', email, password }),
-    logout: () => post<{ success: boolean }>('auth', { action: 'logout' }, true),
-    claimFirstAdmin: () => post<{ claimed: boolean }>('auth', { action: 'claim_first_admin' }, true),
-  },
-
-  upload: async (file: File): Promise<{ url: string; kind: 'image' | 'video' }> => {
-    const url = new URL(BASE);
-    url.searchParams.set('endpoint', 'upload');
-    const form = new FormData();
-    form.append('file', file);
-    const res = await fetch(url.toString(), { method: 'POST', headers: authHeaders(), body: form });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || 'Échec du téléversement');
-    return data;
+  upload: async (file: File): Promise<{ url: string; kind: "image" | "video" }> => {
+    const kind: "image" | "video" = file.type.startsWith("video/") ? "video" : "image";
+    const ext = file.name.includes(".") ? file.name.slice(file.name.lastIndexOf(".")) : "";
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
+    const { error } = await supabase.storage.from("article-images").upload(path, file);
+    if (error) throw new Error(error.message || "Échec du téléversement");
+    const { data } = supabase.storage.from("article-images").getPublicUrl(path);
+    return { url: data.publicUrl, kind };
   },
 
   adminArticles: {
-    list: () => get<any[]>('admin_articles', {}, true),
-    get: (id: string) => get<any>('admin_articles', { id }, true),
-    create: (payload: Record<string, unknown>) => post<{ id: string; success: boolean }>('admin_articles', { action: 'create', ...payload }, true),
-    update: (id: string, payload: Record<string, unknown>) => post<{ success: boolean }>('admin_articles', { action: 'update', id, ...payload }, true),
-    delete: (id: string) => post<{ success: boolean }>('admin_articles', { action: 'delete', id }, true),
+    list: async () => {
+      const { data, error } = await supabase
+        .from("articles")
+        .select(ARTICLE_SELECT)
+        .order("created_at", { ascending: false });
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    get: async (id: string) => {
+      const { data, error } = await supabase.from("articles").select(ARTICLE_SELECT).eq("id", id).maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!data) throw new Error("Article introuvable");
+      return data;
+    },
+    create: async (payload: TablesInsert<"articles">) => {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw new Error(userError.message);
+      const { data, error } = await supabase
+        .from("articles")
+        .insert({ ...payload, author_id: userData.user?.id })
+        .select("id")
+        .single();
+      if (error) throw new Error(error.message);
+      return { id: data.id, success: true };
+    },
+    update: async (id: string, payload: TablesUpdate<"articles">) => {
+      const { error } = await supabase.from("articles").update(payload).eq("id", id);
+      if (error) throw new Error(error.message);
+      return { success: true };
+    },
+    delete: async (id: string) => {
+      const { error, count } = await supabase
+        .from("articles")
+        .delete({ count: "exact" })
+        .eq("id", id);
+      if (error) throw new Error(error.message);
+      if (!count) throw new Error("Suppression refusée : droits insuffisants ou article introuvable.");
+      return { success: true };
+    },
   },
 
   adminComments: {
-    list: () => get<any[]>('admin_comments', {}, true),
-    approve: (id: string) => post<{ success: boolean }>('admin_comments', { action: 'approve', id }, true),
-    delete: (id: string) => post<{ success: boolean }>('admin_comments', { action: 'delete', id }, true),
+    list: async () => {
+      const { data, error } = await supabase
+        .from("comments")
+        .select("*, article:articles(title)")
+        .order("created_at", { ascending: false });
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    approve: async (id: string) => {
+      const { error } = await supabase.from("comments").update({ approved: true }).eq("id", id);
+      if (error) throw new Error(error.message);
+      return { success: true };
+    },
+    delete: async (id: string) => {
+      const { error } = await supabase.from("comments").delete().eq("id", id);
+      if (error) throw new Error(error.message);
+      return { success: true };
+    },
   },
 
   adminNewsletter: {
-    list: () => get<any[]>('admin_newsletter', {}, true),
+    list: async () => {
+      const { data, error } = await supabase
+        .from("newsletter_subscribers")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw new Error(error.message);
+      return data;
+    },
   },
 
   adminStats: {
-    get: () => get<{ total: number; published: number; pendingComments: number; subs: number }>('admin_stats', {}, true),
+    get: async () => {
+      const [total, published, pendingComments, subs] = await Promise.all([
+        supabase.from("articles").select("*", { count: "exact", head: true }),
+        supabase.from("articles").select("*", { count: "exact", head: true }).eq("status", "published"),
+        supabase.from("comments").select("*", { count: "exact", head: true }).eq("approved", false),
+        supabase.from("newsletter_subscribers").select("*", { count: "exact", head: true }),
+      ]);
+      return {
+        total: total.count ?? 0,
+        published: published.count ?? 0,
+        pendingComments: pendingComments.count ?? 0,
+        subs: subs.count ?? 0,
+      };
+    },
   },
 };

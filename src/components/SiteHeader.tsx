@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { Search, Menu, X, Facebook, Twitter } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import logo from "@/assets/logo.jpeg";
-import { getToken } from "@/lib/api";
+import { useAuth } from "@/lib/use-auth";
 
 const NAV = [
   { to: "/", label: "Accueil" },
@@ -14,14 +14,8 @@ const NAV = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
-  const [isAuthed, setIsAuthed] = useState(false);
-
-  useEffect(() => {
-    const check = () => setIsAuthed(!!getToken());
-    check();
-    window.addEventListener("auth-changed", check);
-    return () => window.removeEventListener("auth-changed", check);
-  }, []);
+  const { session } = useAuth();
+  const isAuthed = !!session;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">

@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAuth } from "@/lib/use-auth";
-import { api, setToken } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LayoutDashboard, FileText, Plus, MessageSquare, Mail, LogOut } from "lucide-react";
 
@@ -17,18 +17,22 @@ function AdminLayout() {
     if (!loading && !session) nav({ to: "/auth" });
   }, [loading, session, nav]);
 
+  const triedClaimForUserId = useRef<string | null>(null);
   useEffect(() => {
-    // Auto-claim admin if no admin exists yet
-    if (session && !isAdmin && !loading) {
-      api.auth.claimFirstAdmin().then(({ claimed }) => {
+    // Auto-claim admin if no admin exists yet — only attempt once per user per
+    // mount, since `session` gets a new object reference on every token
+    // refresh and would otherwise re-fire this RPC repeatedly.
+    if (session && !isAdmin && !loading && triedClaimForUserId.current !== session.user.id) {
+      triedClaimForUserId.current = session.user.id;
+      supabase.rpc("claim_first_admin").then(({ data: claimed }) => {
         if (claimed) { toast.success("Vous êtes le premier administrateur !"); reloadRoles(); }
       });
     }
   }, [session, isAdmin, loading, reloadRoles]);
 
   async function logout() {
-    await api.auth.logout().catch(() => {});
-    setToken(null);
+    const { error } = await supabase.auth.signOut();
+    if (error) toast.error("Erreur lors de la déconnexion : " + error.message);
     nav({ to: "/" });
   }
 

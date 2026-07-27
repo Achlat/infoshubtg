@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { api, getToken, setToken } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 
@@ -18,7 +18,9 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (getToken()) nav({ to: "/admin" });
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) nav({ to: "/admin" });
+    });
   }, [nav]);
 
   async function submit(e: React.FormEvent) {
@@ -26,13 +28,21 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { token } = await api.auth.register(email, password, name);
-        setToken(token);
-        toast.success("Compte créé. Vous êtes connecté(e).");
-        nav({ to: "/admin" });
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { display_name: name } },
+        });
+        if (error) throw error;
+        if (data.session) {
+          toast.success("Compte créé. Vous êtes connecté(e).");
+          nav({ to: "/admin" });
+        } else {
+          toast.success("Compte créé. Vérifiez votre email pour confirmer avant de vous connecter.");
+        }
       } else {
-        const { token } = await api.auth.login(email, password);
-        setToken(token);
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
         nav({ to: "/admin" });
       }
     } catch (err: any) {

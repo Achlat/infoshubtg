@@ -197,10 +197,15 @@ export function ArticleForm({ initial }: { initial?: any }) {
           </div>
 
           <div className="space-y-2 rounded-xl border border-border bg-card p-4">
-            <button onClick={() => save(true)} disabled={saving} className="w-full rounded-md py-2.5 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50" style={{ background: "var(--gradient-hero)" }}>
+            {(uploading || uploadingVideo) && (
+              <p className="text-center text-xs font-semibold text-muted-foreground">
+                Téléversement en cours, veuillez patienter avant d'enregistrer…
+              </p>
+            )}
+            <button onClick={() => save(true)} disabled={saving || uploading || uploadingVideo} className="w-full rounded-md py-2.5 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50" style={{ background: "var(--gradient-hero)" }}>
               {saving ? "..." : "Publier"}
             </button>
-            <button onClick={() => { setStatus("draft"); save(false); }} disabled={saving} className="w-full rounded-md bg-secondary py-2 text-sm font-bold hover:bg-secondary/80 disabled:opacity-50">
+            <button onClick={() => { setStatus("draft"); save(false); }} disabled={saving || uploading || uploadingVideo} className="w-full rounded-md bg-secondary py-2 text-sm font-bold hover:bg-secondary/80 disabled:opacity-50">
               Enregistrer en brouillon
             </button>
           </div>

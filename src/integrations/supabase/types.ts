@@ -31,6 +31,7 @@ export type Database = {
           tags: string[] | null
           title: string
           updated_at: string
+          video_url: string | null
           views: number
         }
         Insert: {
@@ -49,6 +50,7 @@ export type Database = {
           tags?: string[] | null
           title: string
           updated_at?: string
+          video_url?: string | null
           views?: number
         }
         Update: {
@@ -67,6 +69,7 @@ export type Database = {
           tags?: string[] | null
           title?: string
           updated_at?: string
+          video_url?: string | null
           views?: number
         }
         Relationships: [
