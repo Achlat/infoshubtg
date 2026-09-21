@@ -2,6 +2,12 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { renderMaintenancePage } from "./lib/maintenance-page";
+
+// Site-wide maintenance switch. When true, every request (including /admin
+// and /auth) gets the maintenance page instead of reaching the app.
+// Flip back to false in code to restore the site.
+const MAINTENANCE_MODE = true;
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -39,6 +45,12 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    if (MAINTENANCE_MODE) {
+      return new Response(renderMaintenancePage(), {
+        status: 503,
+        headers: { "content-type": "text/html; charset=utf-8", "retry-after": "3600" },
+      });
+    }
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
